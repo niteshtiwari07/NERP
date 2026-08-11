@@ -1,0 +1,26 @@
+{
+  "name": "erp-crm-operations-portal",
+  "version": "1.0.0",
+  "description": "Production Mini ERP + CRM Operations Portal",
+  "private": true,
+  "scripts": {
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "build:server": "npm run build --prefix server",
+    "build:client": "npm run build --prefix client",
+    "db:generate": "npm run prisma:generate --prefix server",
+    "db:seed": "npm run prisma:seed --prefix server",
+    "build": "npm run build:server && npm run build:client"
+  },
+  "keywords": [
+    "erp",
+    "crm",
+    "express",
+    "react",
+    "prisma",
+    "typescript",
+    "postgresql"
+  ],
+  "author": "Senior Full-Stack Engineer",
+  "license": "ISC"
+}
