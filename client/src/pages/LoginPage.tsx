@@ -22,7 +22,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       await login(email, password);
-      showSuccess('Welcome back!', 'Successfully logged in to ERP & CRM Operations Portal');
+      showSuccess('Welcome back', 'Successfully logged in to NERP Operations Portal.');
       navigate('/dashboard');
     } catch (err: any) {
       const message = err.response?.data?.message || 'Login failed. Check your credentials.';
@@ -38,26 +38,22 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Dynamic Background Effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-md glass-panel p-8 rounded-3xl shadow-2xl border border-slate-800 relative z-10">
-        {/* Header Branding */}
-        <div className="text-center mb-8">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white shadow-xl shadow-brand-500/20 mb-4">
-            <Building2 className="w-8 h-8" />
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white p-7 rounded-lg border border-slate-200 shadow-sm">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex p-2.5 rounded bg-indigo-600 text-white mb-3">
+            <Building2 className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">NERP Operations Portal</h2>
-          <p className="text-sm text-slate-400 mt-1">Wholesale & Distribution Portal</p>
+          <h2 className="text-xl font-bold text-slate-900">NERP Operations Portal</h2>
+          <p className="text-xs text-slate-500 mt-1">Internal ERP & CRM Operations System</p>
         </div>
 
         {/* Quick Test Accounts Switcher */}
-        <div className="mb-6 p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
-          <div className="flex items-center space-x-2 text-xs font-semibold text-brand-400 mb-2">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Select Test Account Role (Demo Password: Password123!)</span>
+        <div className="mb-6 p-3.5 rounded bg-slate-50 border border-slate-200">
+          <div className="flex items-center space-x-1.5 text-xs font-semibold text-slate-700 mb-2">
+            <ShieldCheck className="w-4 h-4 text-indigo-600" />
+            <span>Select Test Account (Password: Password123!)</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {[
@@ -70,10 +66,10 @@ export const LoginPage: React.FC = () => {
                 key={acc.role}
                 type="button"
                 onClick={() => handleQuickLogin(acc.email)}
-                className={`px-3 py-2 rounded-xl text-xs font-medium border text-left transition-all ${
+                className={`p-2 rounded text-left border text-xs transition-colors ${
                   email === acc.email
-                    ? 'bg-brand-600 text-white border-brand-400 shadow-md'
-                    : 'bg-slate-800/60 text-slate-300 border-slate-700 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-indigo-600 text-white border-indigo-600 font-semibold'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 <div className="font-semibold">{acc.role}</div>
@@ -86,35 +82,35 @@ export const LoginPage: React.FC = () => {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="w-5 h-5 text-slate-500 absolute left-3.5 top-3" />
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@company.com"
                 required
-                className="w-full bg-slate-900/80 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+                className="w-full bg-white border border-slate-300 rounded pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-5 h-5 text-slate-500 absolute left-3.5 top-3" />
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full bg-slate-900/80 border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+                className="w-full bg-white border border-slate-300 rounded pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
               />
             </div>
           </div>
@@ -122,9 +118,9 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-brand-500/25 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 px-4 rounded shadow-sm flex items-center justify-center space-x-1.5 transition-colors disabled:opacity-50 mt-2"
           >
-            <span>{loading ? 'Authenticating...' : 'Sign In to Portal'}</span>
+            <span>{loading ? 'Authenticating...' : 'Sign In'}</span>
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>

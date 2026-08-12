@@ -5,9 +5,9 @@ import { productService } from '../services/productService';
 import { challanService } from '../services/challanService';
 import type { Customer, Product } from '../types/models';
 import { useToast } from '../hooks/useToast';
-import { ArrowLeft, Plus, Trash2, FileText, AlertCircle, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Trash2, CheckCircle2 } from 'lucide-react';
 
-interface SelectedItem {
+interface ChallanItemInput {
   productId: string;
   product?: Product;
   quantity: number;
@@ -15,21 +15,25 @@ interface SelectedItem {
 
 export const CreateChallanPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const preSelectedCustomerId = searchParams.get('customerId') || '';
+  const preselectedCustomerId = searchParams.get('customerId') || '';
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState(preSelectedCustomerId);
-  const [items, setItems] = useState<SelectedItem[]>([
-    { productId: '', quantity: 1 },
-  ]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(preselectedCustomerId);
+
+  // Items State
+  const [items, setItems] = useState<ChallanItemInput[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
 
   useEffect(() => {
-    const loadInitialData = async () => {
+    const loadMasterData = async () => {
+      setLoading(true);
       try {
         const [custRes, prodRes] = await Promise.all([
           customerService.getCustomers({ limit: 100 }),
@@ -37,277 +41,320 @@ export const CreateChallanPage: React.FC = () => {
         ]);
         setCustomers(custRes.items);
         setProducts(prodRes.items);
+        if (prodRes.items.length > 0) {
+          setSelectedProductId(prodRes.items[0].id);
+        }
       } catch (err) {
-        console.error('Failed to load customers or products:', err);
+        console.error('Failed to load master data:', err);
+      } finally {
+        setLoading(false);
       }
     };
-    loadInitialData();
+    loadMasterData();
   }, []);
 
-  const handleProductChange = (index: number, productId: string) => {
-    const selectedProd = products.find((p) => p.id === productId);
-    const updated = [...items];
-    updated[index] = {
-      ...updated[index],
-      productId,
-      product: selectedProd,
-    };
-    setItems(updated);
-  };
-
-  const handleQuantityChange = (index: number, quantity: number) => {
-    const updated = [...items];
-    updated[index].quantity = Math.max(1, quantity);
-    setItems(updated);
-  };
-
   const handleAddItem = () => {
-    setItems([...items, { productId: '', quantity: 1 }]);
-  };
+    if (!selectedProductId) return;
+    const prod = products.find((p) => p.id === selectedProductId);
+    if (!prod) return;
 
-  const handleRemoveItem = (index: number) => {
-    if (items.length === 1) return;
-    setItems(items.filter((_, i) => i !== index));
-  };
-
-  // Calculations
-  const calculatedItems = items.map((item) => {
-    const unitPrice = item.product ? Number(item.product.unitPrice) : 0;
-    const total = unitPrice * item.quantity;
-    return {
-      ...item,
-      unitPrice,
-      total,
-    };
-  });
-
-  const grandTotalAmount = calculatedItems.reduce((acc, curr) => acc + curr.total, 0);
-  const grandTotalQuantity = calculatedItems.reduce((acc, curr) => acc + (curr.productId ? curr.quantity : 0), 0);
-
-  const handleSubmitDraft = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCustomerId) {
-      showError('Customer Required', 'Please select a customer for this sales challan.');
+    if (quantity > prod.currentStock) {
+      showError(
+        'Stock Alert',
+        `Requested quantity (${quantity}) exceeds current available stock (${prod.currentStock}).`
+      );
       return;
     }
 
-    const validItems = items.filter((i) => i.productId && i.quantity > 0);
-    if (validItems.length === 0) {
-      showError('Products Required', 'Please add at least one product with quantity > 0.');
+    const existingIndex = items.findIndex((i) => i.productId === selectedProductId);
+    if (existingIndex > -1) {
+      const newItems = [...items];
+      const newQty = newItems[existingIndex].quantity + quantity;
+      if (newQty > prod.currentStock) {
+        showError(
+          'Stock Alert',
+          `Combined quantity (${newQty}) exceeds current available stock (${prod.currentStock}).`
+        );
+        return;
+      }
+      newItems[existingIndex].quantity = newQty;
+      setItems(newItems);
+    } else {
+      setItems([...items, { productId: selectedProductId, product: prod, quantity }]);
+    }
+
+    setQuantity(1);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleQuantityChange = (index: number, newQty: number) => {
+    if (newQty < 1) return;
+    const newItems = [...items];
+    const prod = newItems[index].product;
+    if (prod && newQty > prod.currentStock) {
+      showError(
+        'Stock Alert',
+        `Quantity (${newQty}) exceeds available stock (${prod.currentStock}).`
+      );
+      return;
+    }
+    newItems[index].quantity = newQty;
+    setItems(newItems);
+  };
+
+  const totalAmount = items.reduce((acc, item) => {
+    const price = Number(item.product?.unitPrice || 0);
+    return acc + price * item.quantity;
+  }, 0);
+
+  const totalQuantity = items.reduce((acc, item) => acc + item.quantity, 0);
+
+  const handleSubmitChallan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCustomerId) {
+      showError('Customer Required', 'Please select a customer account.');
+      return;
+    }
+    if (items.length === 0) {
+      showError('Items Required', 'Add at least one product item to the sales challan.');
       return;
     }
 
     setSubmitting(true);
     try {
-      const challan = await challanService.createChallan({
+      const payload = {
         customerId: selectedCustomerId,
-        items: validItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-      });
+        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      };
+      const created = await challanService.createChallan(payload);
       showSuccess(
-        'Draft Challan Saved',
-        `Sales Challan ${challan.challanNumber} created in DRAFT status.`
+        'Challan Created',
+        `Draft Challan ${created.challanNumber} created successfully.`
       );
-      navigate(`/challans/${challan.id}`);
+      navigate(`/challans/${created.id}`);
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to create sales challan.';
-      showError('Error Creating Challan', msg);
+      showError('Error', msg);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500 text-xs">Loading master catalog...</div>;
+  }
+
+  const selectedCustomerObj = customers.find((c) => c.id === selectedCustomerId);
+  const currentSelectedProd = products.find((p) => p.id === selectedProductId);
 
   return (
-    <div className="space-y-8">
-      {/* Back Button */}
+    <div className="space-y-6">
+      {/* Top Header */}
       <div className="flex items-center justify-between">
         <Link
           to="/challans"
-          className="inline-flex items-center space-x-2 text-sm text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center space-x-1 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Sales Challans</span>
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column (2 Cols): Form */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Create New Sales Delivery Challan</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Select customer account and dispatch line items</p>
+        </div>
+      </div>
+
+      {/* Main 2-Column Form Layout */}
+      <form onSubmit={handleSubmitChallan} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column (2 Cols): Line Item Selector & Summary Table */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+          {/* Customer Selection Card */}
+          <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900">1. Customer Information</h3>
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight flex items-center">
-                <FileText className="w-6 h-6 mr-2 text-brand-400" />
-                Create New Sales Challan
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Draft sales challan does not deduct inventory stock until confirmed.
-              </p>
+              <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                Select Customer Account *
+              </label>
+              <select
+                required
+                value={selectedCustomerId}
+                onChange={(e) => setSelectedCustomerId(e.target.value)}
+                className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-600"
+              >
+                <option value="">-- Choose Customer --</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.customerName} ({c.businessName})
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <form onSubmit={handleSubmitDraft} className="space-y-6">
-              {/* Step 1: Select Customer */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                  1. Select Account / Customer *
+            {selectedCustomerObj && (
+              <div className="p-3 bg-slate-50 rounded border border-slate-200 text-xs space-y-1">
+                <p className="font-semibold text-slate-900">{selectedCustomerObj.businessName}</p>
+                <p className="text-slate-600">GSTIN: {selectedCustomerObj.gstNumber || 'N/A'}</p>
+                <p className="text-slate-600">{selectedCustomerObj.address}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Add Product Items Card */}
+          <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
+            <h3 className="text-sm font-semibold text-slate-900">2. Add Line Items</h3>
+
+            <div className="flex flex-col sm:flex-row items-end gap-3">
+              <div className="flex-1 w-full">
+                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                  Product / SKU *
                 </label>
                 <select
-                  required
-                  value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-brand-500"
+                  value={selectedProductId}
+                  onChange={(e) => setSelectedProductId(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-600"
                 >
-                  <option value="">-- Choose Customer --</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.customerName} ({c.businessName}) - [{c.customerType}]
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.sku}) — ₹{Number(p.unitPrice).toFixed(2)} | Stock: {p.currentStock}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Step 2: Add Products */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    2. Select Products & Order Quantities *
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleAddItem}
-                    className="inline-flex items-center space-x-1 text-xs font-semibold text-brand-400 hover:text-brand-300 bg-brand-950/40 px-3 py-1.5 rounded-lg border border-brand-800/40 transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Item Line</span>
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {items.map((item, index) => {
-                    const calc = calculatedItems[index];
-                    return (
-                      <div
-                        key={index}
-                        className="p-4 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-                      >
-                        {/* Product Selector */}
-                        <div className="flex-1 w-full">
-                          <select
-                            required
-                            value={item.productId}
-                            onChange={(e) => handleProductChange(index, e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500"
-                          >
-                            <option value="">-- Choose Product SKU --</option>
-                            {products.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name} (SKU: {p.sku}) - ₹{Number(p.unitPrice)} | Stock: {p.currentStock}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Quantity Input */}
-                        <div className="w-28 flex items-center space-x-2">
-                          <input
-                            type="number"
-                            min="1"
-                            required
-                            value={item.quantity}
-                            onChange={(e) => handleQuantityChange(index, parseInt(e.target.value, 10) || 1)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white font-mono text-center focus:outline-none focus:border-brand-500"
-                          />
-                        </div>
-
-                        {/* Subtotal */}
-                        <div className="w-32 text-right font-mono text-sm font-semibold text-white">
-                          ₹{calc.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </div>
-
-                        {/* Remove */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(index)}
-                          disabled={items.length === 1}
-                          className="p-2 text-slate-500 hover:text-rose-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="w-full sm:w-28">
+                <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+                  Quantity *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-indigo-600"
+                />
               </div>
 
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end space-x-4 pt-4 border-t border-slate-800">
-                <Link
-                  to="/challans"
-                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
-                >
-                  Cancel
-                </Link>
+              <button
+                type="button"
+                onClick={handleAddItem}
+                className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 py-2 rounded transition-colors"
+              >
+                + Add Line Item
+              </button>
+            </div>
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 shadow-lg shadow-brand-500/20 transition-all disabled:opacity-50"
-                >
-                  {submitting ? 'Generating Draft...' : 'Save Draft Sales Challan'}
-                </button>
-              </div>
-            </form>
+            {currentSelectedProd && (
+              <p className="text-[11px] text-slate-500 font-mono">
+                Location: {currentSelectedProd.warehouseLocation} | Available: {currentSelectedProd.currentStock} units
+              </p>
+            )}
+
+            {/* Line Items Table */}
+            <div className="pt-2">
+              <h4 className="text-xs font-semibold text-slate-700 uppercase mb-2">Challan Dispatched Items</h4>
+              {items.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs border border-dashed border-slate-300 rounded">
+                  No line items added yet. Choose a product above and click "+ Add Line Item".
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-slate-200 rounded">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600 uppercase">
+                        <th className="py-2.5 px-3">Item & SKU</th>
+                        <th className="py-2.5 px-3 text-right">Price</th>
+                        <th className="py-2.5 px-3 text-center">Qty</th>
+                        <th className="py-2.5 px-3 text-right">Subtotal</th>
+                        <th className="py-2.5 px-3 text-center">Remove</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {items.map((item, idx) => {
+                        const subtotal = Number(item.product?.unitPrice || 0) * item.quantity;
+                        return (
+                          <tr key={idx}>
+                            <td className="py-2.5 px-3">
+                              <p className="font-semibold text-slate-900">{item.product?.name}</p>
+                              <p className="text-[11px] font-mono text-slate-500">{item.product?.sku}</p>
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono">
+                              ₹{Number(item.product?.unitPrice || 0).toFixed(2)}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => handleQuantityChange(idx, parseInt(e.target.value, 10) || 1)}
+                                className="w-16 bg-white border border-slate-300 rounded px-2 py-0.5 text-center font-mono text-xs text-slate-900"
+                              />
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                              ₹{subtotal.toFixed(2)}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(idx)}
+                                className="text-slate-400 hover:text-rose-600 p-1 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Right Column (1 Col): Live Preview Card */}
+        {/* Right Column (1 Col): Order Summary Card & Submit */}
         <div className="space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 sticky top-24">
-            <h3 className="text-base font-semibold text-white border-b border-slate-800 pb-3 flex items-center">
-              <ShoppingBag className="w-5 h-5 mr-2 text-brand-400" />
-              Sales Challan Summary
+          <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
+            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-2">
+              Challan Order Summary
             </h3>
 
-            {/* Customer Details */}
-            {selectedCustomer ? (
-              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs space-y-1">
-                <p className="font-semibold text-white">{selectedCustomer.customerName}</p>
-                <p className="text-slate-400">{selectedCustomer.businessName}</p>
-                <p className="text-slate-400 font-mono">{selectedCustomer.mobile}</p>
+            <div className="space-y-2 text-xs text-slate-600">
+              <div className="flex justify-between">
+                <span>Total Items:</span>
+                <span className="font-mono font-semibold text-slate-900">{items.length} SKUs</span>
               </div>
-            ) : (
-              <div className="text-xs text-slate-500 italic p-3 rounded-xl bg-slate-900 border border-slate-800">
-                No customer selected yet.
+              <div className="flex justify-between">
+                <span>Total Dispatch Units:</span>
+                <span className="font-mono font-semibold text-slate-900">{totalQuantity} units</span>
               </div>
-            )}
-
-            {/* Totals Breakdown */}
-            <div className="space-y-2 text-xs pt-2">
-              <div className="flex justify-between text-slate-400">
-                <span>Total Item Types:</span>
-                <span className="font-mono text-white">{items.length} SKUs</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Total Quantity:</span>
-                <span className="font-mono text-white">{grandTotalQuantity} units</span>
-              </div>
-              <div className="flex justify-between text-sm font-bold border-t border-slate-800 pt-3 text-white">
-                <span>Grand Total Amount:</span>
-                <span className="font-mono text-brand-400">
-                  ₹{grandTotalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              <div className="pt-3 border-t border-slate-200 flex justify-between text-sm font-bold text-slate-900">
+                <span>Total Amount:</span>
+                <span className="font-mono text-indigo-600">
+                  ₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/20 text-[11px] text-amber-300 leading-relaxed flex items-start space-x-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
-              <span>
-                Draft Challans reserve product snapshot info (Name, SKU, Unit Price). Actual inventory is deducted when confirmed.
-              </span>
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={submitting || items.length === 0}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2.5 px-4 rounded shadow-sm flex items-center justify-center space-x-1.5 transition-colors disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{submitting ? 'Generating...' : 'Save Draft Sales Challan'}</span>
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

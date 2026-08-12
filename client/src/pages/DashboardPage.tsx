@@ -38,7 +38,7 @@ export const DashboardPage: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <CardSkeleton />
           <CardSkeleton />
           <CardSkeleton />
@@ -51,17 +51,17 @@ export const DashboardPage: React.FC = () => {
   const stats = data?.stats;
 
   return (
-    <div className="space-y-8">
-      {/* Dashboard Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Executive Dashboard</h2>
-          <p className="text-sm text-slate-400 mt-1">Real-time overview of inventory, sales challans & CRM follow-ups</p>
+          <h2 className="text-xl font-bold text-slate-900">Executive Dashboard</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Overview of inventory, sales challans & CRM follow-ups</p>
         </div>
 
         <Link
           to="/challans/create"
-          className="inline-flex items-center space-x-2 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-brand-500/20 transition-all self-start md:self-auto"
+          className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2 rounded shadow-sm transition-colors self-start sm:self-auto"
         >
           <FileText className="w-4 h-4" />
           <span>New Sales Challan</span>
@@ -71,112 +71,112 @@ export const DashboardPage: React.FC = () => {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Customers */}
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Customers</p>
-            <h3 className="text-2xl font-bold text-white mt-1">{stats?.totalCustomers || 0}</h3>
-            <span className="inline-flex items-center text-xs text-emerald-400 font-medium mt-2">
-              <TrendingUp className="w-3.5 h-3.5 mr-1" /> {stats?.activeCustomers || 0} Active Accounts
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Customers</p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">{stats?.totalCustomers || 0}</h3>
+            <span className="inline-flex items-center text-xs text-emerald-700 font-medium mt-1">
+              <TrendingUp className="w-3.5 h-3.5 mr-1" /> {stats?.activeCustomers || 0} Active
             </span>
           </div>
-          <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
-            <Users className="w-6 h-6" />
+          <div className="p-2.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+            <Users className="w-5 h-5" />
           </div>
         </div>
 
         {/* Card 2: Total Products */}
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Products</p>
-            <h3 className="text-2xl font-bold text-white mt-1">{stats?.totalProducts || 0}</h3>
-            <span className="inline-flex items-center text-xs text-slate-400 font-medium mt-2">
-              <Boxes className="w-3.5 h-3.5 mr-1 text-slate-400" /> Catalog SKUs
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Products</p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">{stats?.totalProducts || 0}</h3>
+            <span className="inline-flex items-center text-xs text-slate-500 font-medium mt-1">
+              <Boxes className="w-3.5 h-3.5 mr-1" /> Master SKUs
             </span>
           </div>
-          <div className="p-3 rounded-2xl bg-brand-500/10 text-brand-400 border border-brand-500/20">
-            <Package className="w-6 h-6" />
+          <div className="p-2.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+            <Package className="w-5 h-5" />
           </div>
         </div>
 
-        {/* Card 3: Low Stock Alert */}
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
+        {/* Card 3: Low Stock Warning */}
+        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Low Stock Items</p>
-            <h3 className="text-2xl font-bold text-rose-400 mt-1">{stats?.lowStockProductsCount || 0}</h3>
-            <span className="inline-flex items-center text-xs text-amber-400 font-medium mt-2">
-              <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Reorder required
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Low Stock Items</p>
+            <h3 className="text-2xl font-bold text-rose-600 mt-1">{stats?.lowStockProductsCount || 0}</h3>
+            <span className="inline-flex items-center text-xs text-amber-700 font-medium mt-1">
+              <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Reorder Alert
             </span>
           </div>
-          <div className="p-3 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
-            <AlertTriangle className="w-6 h-6" />
+          <div className="p-2.5 rounded bg-rose-50 text-rose-600 border border-rose-200">
+            <AlertTriangle className="w-5 h-5" />
           </div>
         </div>
 
         {/* Card 4: Sales Challans */}
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Challans</p>
-            <h3 className="text-2xl font-bold text-white mt-1">{stats?.totalChallans || 0}</h3>
-            <span className="inline-flex items-center text-xs text-slate-400 font-medium mt-2">
-              <Clock className="w-3.5 h-3.5 mr-1 text-amber-400" /> {stats?.draftChallans || 0} Drafts / {stats?.confirmedChallans || 0} Confirmed
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Challans</p>
+            <h3 className="text-2xl font-bold text-slate-900 mt-1">{stats?.totalChallans || 0}</h3>
+            <span className="inline-flex items-center text-xs text-slate-500 font-medium mt-1">
+              <Clock className="w-3.5 h-3.5 mr-1 text-slate-400" /> {stats?.draftChallans || 0} Drafts / {stats?.confirmedChallans || 0} Confirmed
             </span>
           </div>
-          <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
-            <FileText className="w-6 h-6" />
+          <div className="p-2.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+            <FileText className="w-5 h-5" />
           </div>
         </div>
       </div>
 
-      {/* Main Content Split Grid */}
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2 Cols): Recent Challans */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="glass-panel rounded-2xl border border-slate-800 p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-base font-semibold text-white">Recent Sales Challans</h3>
-                <p className="text-xs text-slate-400">Latest sales orders and confirmation status</p>
+                <h3 className="text-sm font-semibold text-slate-900">Recent Sales Challans</h3>
+                <p className="text-xs text-slate-500">Latest dispatch orders</p>
               </div>
               <Link
                 to="/challans"
-                className="text-xs font-semibold text-brand-400 hover:text-brand-300 inline-flex items-center"
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 inline-flex items-center"
               >
                 View All <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
               </Link>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase">
-                    <th className="py-3 px-3">Challan #</th>
-                    <th className="py-3 px-3">Customer</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3 text-right">Amount (₹)</th>
-                    <th className="py-3 px-3 text-right">Action</th>
+                  <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600 uppercase">
+                    <th className="py-2.5 px-3">Challan #</th>
+                    <th className="py-2.5 px-3">Customer</th>
+                    <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3 text-right">Amount (₹)</th>
+                    <th className="py-2.5 px-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                <tbody className="divide-y divide-slate-100 text-slate-700">
                   {data?.recentChallans && data.recentChallans.length > 0 ? (
                     data.recentChallans.map((challan) => (
-                      <tr key={challan.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3 px-3 font-mono font-semibold text-brand-400">
+                      <tr key={challan.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-2.5 px-3 font-mono font-semibold text-indigo-600">
                           {challan.challanNumber}
                         </td>
-                        <td className="py-3 px-3">
-                          <p className="font-medium text-white">{challan.customer?.customerName}</p>
-                          <p className="text-xs text-slate-500">{challan.customer?.businessName}</p>
+                        <td className="py-2.5 px-3">
+                          <p className="font-medium text-slate-900">{challan.customer?.customerName}</p>
+                          <p className="text-[11px] text-slate-500">{challan.customer?.businessName}</p>
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="py-2.5 px-3">
                           <ChallanStatusBadge status={challan.status} />
                         </td>
-                        <td className="py-3 px-3 text-right font-mono font-semibold text-white">
+                        <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-900">
                           ₹{Number(challan.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="py-3 px-3 text-right">
+                        <td className="py-2.5 px-3 text-right">
                           <Link
                             to={`/challans/${challan.id}`}
-                            className="text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg transition-colors inline-block"
+                            className="text-xs font-medium text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition-colors inline-block"
                           >
                             View
                           </Link>
@@ -196,47 +196,46 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Low Stock Warning Section */}
-          <div className="glass-panel rounded-2xl border border-slate-800 p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
-                <AlertTriangle className="w-5 h-5 text-rose-400" />
+                <AlertTriangle className="w-4 h-4 text-rose-600" />
                 <div>
-                  <h3 className="text-base font-semibold text-white">Critical Low Stock Warning</h3>
-                  <p className="text-xs text-slate-400">Products where Current Stock ≤ Minimum Threshold</p>
+                  <h3 className="text-sm font-semibold text-slate-900">Low Stock Warning</h3>
+                  <p className="text-xs text-slate-500">Products where Current Stock ≤ Minimum Threshold</p>
                 </div>
               </div>
               <Link
                 to="/inventory?lowStock=true"
-                className="text-xs font-semibold text-brand-400 hover:text-brand-300 inline-flex items-center"
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 inline-flex items-center"
               >
                 Manage Inventory <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {data?.lowStockProducts && data.lowStockProducts.length > 0 ? (
                 data.lowStockProducts.map((prod) => (
                   <div
                     key={prod.id}
-                    className="p-3.5 rounded-xl bg-rose-950/20 border border-rose-500/30 flex items-center justify-between"
+                    className="p-3 rounded border border-rose-200 bg-rose-50/50 flex items-center justify-between"
                   >
                     <div>
-                      <h4 className="text-sm font-semibold text-white">{prod.name}</h4>
-                      <p className="text-xs text-slate-400 font-mono mt-0.5">
-                        SKU: {prod.sku} | Location: {prod.warehouseLocation}
+                      <h4 className="text-xs font-semibold text-slate-900">{prod.name}</h4>
+                      <p className="text-[11px] text-slate-600 font-mono mt-0.5">
+                        SKU: {prod.sku} | Bay: {prod.warehouseLocation}
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs font-bold text-rose-400 block">
+                      <span className="text-xs font-bold text-rose-700 block">
                         {prod.currentStock} / {prod.minimumStock} min
                       </span>
-                      <span className="text-[10px] text-slate-500 uppercase font-mono">Stock Level</span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="col-span-2 text-center py-4 text-emerald-400 text-xs font-semibold">
-                  ✓ All products are healthy above minimum stock thresholds.
+                <div className="col-span-2 text-center py-3 text-emerald-700 text-xs font-medium bg-emerald-50 rounded border border-emerald-200">
+                  ✓ All product inventory levels are healthy.
                 </div>
               )}
             </div>
@@ -245,46 +244,44 @@ export const DashboardPage: React.FC = () => {
 
         {/* Right Column (1 Col): Upcoming CRM Follow-ups */}
         <div className="space-y-6">
-          <div className="glass-panel rounded-2xl border border-slate-800 p-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <Calendar className="w-5 h-5 text-brand-400" />
+          <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
+            <div className="flex items-center space-x-2 mb-4 border-b border-slate-100 pb-3">
+              <Calendar className="w-4 h-4 text-indigo-600" />
               <div>
-                <h3 className="text-base font-semibold text-white">Upcoming CRM Follow-ups</h3>
-                <p className="text-xs text-slate-400">Scheduled sales calls & client tasks</p>
+                <h3 className="text-sm font-semibold text-slate-900">Upcoming Follow-ups</h3>
+                <p className="text-xs text-slate-500">Scheduled client calls</p>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {data?.upcomingFollowUps && data.upcomingFollowUps.length > 0 ? (
                 data.upcomingFollowUps.map((cust) => (
                   <Link
                     key={cust.id}
                     to={`/customers/${cust.id}`}
-                    className="block p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-brand-500/50 transition-all group"
+                    className="block p-3 rounded border border-slate-200 bg-slate-50 hover:bg-white hover:border-indigo-300 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <h4 className="text-sm font-semibold text-white group-hover:text-brand-300 transition-colors">
-                          {cust.customerName}
-                        </h4>
-                        <p className="text-xs text-slate-400">{cust.businessName}</p>
+                        <h4 className="text-xs font-semibold text-slate-900">{cust.customerName}</h4>
+                        <p className="text-[11px] text-slate-500">{cust.businessName}</p>
                       </div>
                       <CustomerStatusBadge status={cust.status} />
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-                      <span className="inline-flex items-center text-amber-300">
-                        <PhoneCall className="w-3.5 h-3.5 mr-1" />
+                    <div className="mt-2 pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-600">
+                      <span className="inline-flex items-center font-mono">
+                        <PhoneCall className="w-3 h-3 mr-1 text-slate-400" />
                         {cust.mobile}
                       </span>
-                      <span className="font-mono text-slate-400">
+                      <span className="font-mono text-indigo-700 font-medium">
                         {cust.followUpDate ? new Date(cust.followUpDate).toLocaleDateString() : 'Pending'}
                       </span>
                     </div>
                   </Link>
                 ))
               ) : (
-                <div className="text-center py-8 text-slate-500 text-xs">
+                <div className="text-center py-6 text-slate-500 text-xs">
                   No upcoming CRM follow-ups scheduled.
                 </div>
               )}

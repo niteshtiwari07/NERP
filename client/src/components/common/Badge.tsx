@@ -15,22 +15,22 @@ export const Badge: React.FC<BadgeProps> = ({
   className = '',
 }) => {
   const variantStyles = {
-    default: 'bg-slate-800 text-slate-300 border-slate-700',
-    success: 'bg-emerald-950/70 text-emerald-300 border-emerald-500/30',
-    warning: 'bg-amber-950/70 text-amber-300 border-amber-500/30',
-    danger: 'bg-rose-950/70 text-rose-300 border-rose-500/30',
-    info: 'bg-sky-950/70 text-sky-300 border-sky-500/30',
-    purple: 'bg-purple-950/70 text-purple-300 border-purple-500/30',
+    default: 'bg-slate-100 text-slate-700 border-slate-200',
+    success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    warning: 'bg-amber-50 text-amber-700 border-amber-200',
+    danger: 'bg-rose-50 text-rose-700 border-rose-200',
+    info: 'bg-sky-50 text-sky-700 border-sky-200',
+    purple: 'bg-purple-50 text-purple-700 border-purple-200',
   };
 
   const sizeStyles = {
-    sm: 'px-2.5 py-0.5 text-xs',
-    md: 'px-3 py-1 text-sm',
+    sm: 'px-2 py-0.5 text-xs font-medium',
+    md: 'px-2.5 py-1 text-xs font-medium',
   };
 
   return (
     <span
-      className={`inline-flex items-center font-medium rounded-full border shadow-sm ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center rounded border ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
     >
       {children}
     </span>
@@ -70,7 +70,7 @@ export const ChallanStatusBadge: React.FC<{ status: ChallanStatus }> = ({ status
 export const StockBadge: React.FC<{ stock: number; minStock: number }> = ({ stock, minStock }) => {
   if (stock <= minStock) {
     return (
-      <Badge variant="danger" className="animate-pulse">
+      <Badge variant="danger">
         Low Stock ({stock})
       </Badge>
     );

@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { productService } from '../services/productService';
 import type { Product } from '../types/models';
 import { StockBadge } from '../components/common/Badge';
 import { TableSkeleton } from '../components/common/Skeleton';
 import { Pagination } from '../components/common/Pagination';
 import { EmptyState } from '../components/common/EmptyState';
-import { Search, Boxes, AlertTriangle, MapPin, Tag } from 'lucide-react';
+import { Search, Boxes, AlertTriangle } from 'lucide-react';
 
 export const InventoryPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const initialLowStock = searchParams.get('lowStock') === 'true';
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -15,7 +19,7 @@ export const InventoryPage: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [search, setSearch] = useState('');
-  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [lowStockOnly, setLowStockOnly] = useState(initialLowStock);
 
   const fetchInventory = async () => {
     setLoading(true);
@@ -24,13 +28,13 @@ export const InventoryPage: React.FC = () => {
         page,
         limit: 10,
         search,
-        lowStock: lowStockOnly,
+        lowStock: lowStockOnly || undefined,
       });
       setProducts(res.items);
       setTotalPages(res.totalPages);
       setTotalItems(res.total);
     } catch (err) {
-      console.error('Failed to load inventory:', err);
+      console.error('Failed to fetch inventory:', err);
     } finally {
       setLoading(false);
     }
@@ -43,26 +47,26 @@ export const InventoryPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Stock & Warehouse Control</h2>
-        <p className="text-sm text-slate-400 mt-1">
-          Monitor current physical stock balances across warehouse locations
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Warehouse Inventory Tracker</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Real-time stock balances, warehouse bin locations & replenishment alerts</p>
+        </div>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+      <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search stock by SKU, product name, or warehouse bay..."
+            placeholder="Filter by product name, SKU, or bay location..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full bg-slate-900/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-all"
+            className="w-full bg-white border border-slate-300 rounded pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600"
           />
         </div>
 
@@ -71,69 +75,64 @@ export const InventoryPage: React.FC = () => {
             setLowStockOnly(!lowStockOnly);
             setPage(1);
           }}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all ${
+          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-semibold border transition-colors ${
             lowStockOnly
-              ? 'bg-rose-950/80 text-rose-300 border-rose-500 shadow-md shadow-rose-500/10'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+              ? 'bg-rose-50 text-rose-700 border-rose-300'
+              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
           }`}
         >
-          <AlertTriangle className="w-4 h-4 text-rose-400" />
-          <span>Low Stock Items Only</span>
+          <AlertTriangle className="w-3.5 h-3.5" />
+          <span>{lowStockOnly ? 'Showing Low Stock Only' : 'Filter Low Stock Alert'}</span>
         </button>
       </div>
 
-      {/* Table Section */}
-      <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+      {/* Inventory Table */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
           <TableSkeleton rows={5} columns={6} />
         ) : products.length === 0 ? (
           <EmptyState
-            title="No Inventory Items Found"
-            description="No inventory items match your search filter."
-            icon={<Boxes className="w-8 h-8 text-brand-400" />}
+            title="No Inventory Records"
+            description="No SKUs match the current stock filter."
+            icon={<Boxes className="w-6 h-6 text-slate-400" />}
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-900/50 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3.5 px-4">SKU & Item Name</th>
-                  <th className="py-3.5 px-4">Category</th>
-                  <th className="py-3.5 px-4">Warehouse Location</th>
-                  <th className="py-3.5 px-4 text-center">Available Stock</th>
-                  <th className="py-3.5 px-4 text-center">Minimum Threshold</th>
-                  <th className="py-3.5 px-4 text-right">Stock Valuation</th>
+                <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600 uppercase">
+                  <th className="py-3 px-4">Item Details</th>
+                  <th className="py-3 px-4">SKU</th>
+                  <th className="py-3 px-4 text-center">Available Stock</th>
+                  <th className="py-3 px-4 text-center">Minimum Threshold</th>
+                  <th className="py-3 px-4">Warehouse Location</th>
+                  <th className="py-3 px-4 text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-slate-700">
                 {products.map((p) => {
-                  const stockValue = Number(p.unitPrice) * p.currentStock;
+                  const isLow = p.currentStock <= p.minimumStock;
                   return (
-                    <tr key={p.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="font-mono text-xs font-bold text-brand-400">{p.sku}</div>
-                        <div className="font-semibold text-white mt-0.5">{p.name}</div>
+                    <tr
+                      key={p.id}
+                      className={`hover:bg-slate-50 transition-colors ${
+                        isLow ? 'bg-rose-50/30' : ''
+                      }`}
+                    >
+                      <td className="py-3 px-4">
+                        <p className="font-semibold text-slate-900">{p.name}</p>
+                        <p className="text-[11px] text-slate-500">{p.category}</p>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center text-xs text-slate-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                          <Tag className="w-3 h-3 mr-1 text-slate-500" />
-                          {p.category}
-                        </span>
+                      <td className="py-3 px-4 font-mono font-medium text-slate-800">{p.sku}</td>
+                      <td className="py-3 px-4 text-center font-mono font-bold text-slate-900 text-sm">
+                        {p.currentStock}
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-xs text-slate-300">
-                        <span className="inline-flex items-center bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                          <MapPin className="w-3 h-3 mr-1 text-rose-400" />
-                          {p.warehouseLocation}
-                        </span>
+                      <td className="py-3 px-4 text-center font-mono text-slate-500">
+                        {p.minimumStock}
                       </td>
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-3 px-4 font-mono text-slate-700">{p.warehouseLocation}</td>
+                      <td className="py-3 px-4 text-right">
                         <StockBadge stock={p.currentStock} minStock={p.minimumStock} />
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-mono text-slate-400">
-                        {p.minimumStock} units
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-semibold text-white">
-                        ₹{stockValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
                   );
