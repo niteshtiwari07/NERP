@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role, CustomerType, CustomerStatus, MovementType, ChallanStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { Role, CustomerType, CustomerStatus, MovementType, ChallanStatus } from '../src/types/index.js';
 
 const prisma = new PrismaClient();
 
